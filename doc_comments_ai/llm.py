@@ -71,11 +71,10 @@ class LLM:
         )
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
 
-    def generate_doc_comment(self, language, code, inline=False, comment_with_source_code=False):
+    def generate_doc_comment(self, language, code, inline=False, comment_with_source_code=False, docstring=''):
         """
         Generates a doc comment for the given method
         """
-
         if inline:
             comment_instructions = (
                 "Add inline comments to the method body where it makes sense."
@@ -87,6 +86,9 @@ class LLM:
                 "Return the complete method implementation with the doc comment as a markdown code block. "
                 "IMPORTANT: Ensure that absolutely no part of the original function is omitted or modified in your response. Every line, including imports, comments, and variable bindings, should be retained in the output. This is crucial to satisfy my use case."
             )
+            if docstring and len(docstring.strip())>0:
+                comment_instructions[0] += 'The following docstring is already provided, please reuse its content as much as possible and revise to reflect any detail that is missing in the existing docstring: '
+                comment_instructions[0] += docstring
         else:
             comment_instructions = (
                 "Return the doc comment as a markdown block. "

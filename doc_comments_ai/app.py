@@ -70,6 +70,13 @@ def run():
         help="Ollama base url",
     )
 
+    parser.add_argument(
+        "--regenerate_docstring",
+        default=False,
+        action="store_true",
+        help="Rewrite docstrings if they already exist and need update"
+    )
+
     if sys.argv.__len__() < 2:
         sys.exit("Please provide a file")
 
@@ -113,13 +120,14 @@ def run():
             file_bytes
         )
 
+    regenerate_docstring = args.regenerate_docstring
     total_original_tokens = 0
     total_generated_tokens = 0
 
     for node in treesitterNodes:
         method_name = utils.get_bold_text(node.name)
-
-        if node.doc_comment:
+        method_comment = ''
+        if node.doc_comment and not regenerate_docstring:
             print(
                 f"⁉️ Method {method_name} already has a doc comment. Skipping..."
             )
@@ -131,8 +139,9 @@ def run():
                 continue
 
         method_source_code = node.method_source_code
+        method_comment = node.doc_comment if node.doc_comment else method_comment
 
-        tokens = utils.count_tokens(method_source_code)
+        tokens = utils.count_tokens(method_comment+method_source_code)
         total_original_tokens += tokens
         if tokens > 2048 and not (args.gpt4 or args.gpt3_5_16k):
             print(
@@ -153,9 +162,9 @@ def run():
         spinner.start()
 
         doc_comment_result = llm_wrapper.generate_doc_comment(
-            programming_language.value, method_source_code, args.inline, args.comment_with_source_code
-        )
-
+                programming_language.value, method_source_code, args.inline, args.comment_with_source_code, method_comment
+            )
+        #print(doc_comment_result)
         generated_tokens = utils.count_tokens(doc_comment_result)
         total_generated_tokens += generated_tokens
 
@@ -164,12 +173,13 @@ def run():
                 doc_comment_result
             )
             utils.write_code_snippet_to_file(
-                file_name, method_source_code, parsed_doc_comment
+                file_name, method_source_code, parsed_doc_comment, method_comment
             )
         else:
             parsed_doc_comment = utils.extract_comments_from_markdown_code_block(
                 programming_language.value, doc_comment_result
             )
+            #print(parsed_doc_comment)
             utils.write_only_comments_to_file(
                 file_name, method_source_code, parsed_doc_comment
             )
