@@ -83,12 +83,16 @@ class LLM:
             )
         elif comment_with_source_code:
             comment_instructions = (
-                "Return the complete method implementation with the doc comment as a markdown code block. "
-                "IMPORTANT: Ensure that absolutely no part of the original function is omitted or modified in your response. Every line, including imports, comments, and variable bindings, should be retained in the output. This is crucial to satisfy my use case."
+                "Return the complete method implementation with the doc comment as a single markdown code block. "
+                "If a docstring already exists in the code, please reuse its content as much as possible and revise the docstring to reflect any detail that is missing in the existing docstring. "
             )
             if docstring and len(docstring.strip())>0:
-                comment_instructions[0] += 'The following docstring is already provided, please reuse its content as much as possible and revise to reflect any detail that is missing in the existing docstring: '
-                comment_instructions[0] += docstring
+                comment_instructions += 'Additionally, the following docstring is also provided, please reuse its content to revise any detail that is missing in the existing docstring '
+                comment_instructions += docstring + '. '
+            
+            comment_instructions += (
+                "IMPORTANT: Ensure that absolutely no part of the original function's implementation is omitted or modified in your response. Every line, including imports, comments, and variable bindings, should be retained in the output. This is crucial to satisfy my use case. "
+                "The docstring may, however, be revised. ")
         else:
             comment_instructions = (
                 "Return the doc comment as a markdown block. "
@@ -117,6 +121,7 @@ class LLM:
             "haskell_missing_signature": haskell_missing_signature,
         }
 
+        #print(input)
         documented_code = self.chain.run(input)
         return documented_code
 

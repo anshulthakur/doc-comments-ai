@@ -126,7 +126,7 @@ def run():
 
     for node in treesitterNodes:
         method_name = utils.get_bold_text(node.name)
-        method_comment = ''
+        method_comment = None
         if node.doc_comment and not regenerate_docstring:
             print(
                 f"⁉️ Method {method_name} already has a doc comment. Skipping..."
@@ -139,9 +139,10 @@ def run():
                 continue
 
         method_source_code = node.method_source_code
-        method_comment = node.doc_comment if node.doc_comment else method_comment
+        if node.doc_comment and node.doc_comment not in node.method_source_code:
+            method_comment = node.doc_comment
 
-        tokens = utils.count_tokens(method_comment+method_source_code)
+        tokens = utils.count_tokens(method_comment+method_source_code) if method_comment is not None else utils.count_tokens(method_source_code)
         total_original_tokens += tokens
         if tokens > 2048 and not (args.gpt4 or args.gpt3_5_16k):
             print(
@@ -172,6 +173,7 @@ def run():
             parsed_doc_comment = utils.extract_content_from_markdown_code_block(
                 doc_comment_result
             )
+            #print(f"\n\n{parsed_doc_comment}")
             utils.write_code_snippet_to_file(
                 file_name, method_source_code, parsed_doc_comment, method_comment
             )
