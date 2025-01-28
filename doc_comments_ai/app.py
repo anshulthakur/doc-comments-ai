@@ -162,10 +162,12 @@ def run():
         spinner = yaspin(text=f"🔧 Generating doc comment for {method_name}...")
         spinner.start()
 
+        #print("Source code:", method_source_code)
+        #print("Source comment:", method_comment)
         doc_comment_result = llm_wrapper.generate_doc_comment(
                 programming_language.value, method_source_code, args.inline, args.comment_with_source_code, method_comment
             )
-        #print(doc_comment_result)
+        #print("Result: ", doc_comment_result)
         generated_tokens = utils.count_tokens(doc_comment_result)
         total_generated_tokens += generated_tokens
 
@@ -173,7 +175,7 @@ def run():
             parsed_doc_comment = utils.extract_content_from_markdown_code_block(
                 doc_comment_result
             )
-            #print(f"\n\n{parsed_doc_comment}")
+            #print("\n\nParsed markdown:", parsed_doc_comment)
             utils.write_code_snippet_to_file(
                 file_name, method_source_code, parsed_doc_comment, method_comment
             )

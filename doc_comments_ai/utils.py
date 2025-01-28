@@ -65,10 +65,10 @@ def write_code_snippet_to_file(
         modified_code (str): The modified code snippet.
         method_comment (str): Original comment
     """
-    with open(file_path, "r", encoding="utf-8") as file:
-        file_content = file.read()
-        #First, remove the existing comments if they exist
-        if method_comment is not None and len(method_comment.strip())>0:
+    #First, remove the existing comments if they exist
+    if method_comment is not None and len(method_comment.strip())>0:
+        with open(file_path, "r", encoding="utf-8") as file:
+            file_content = file.read()
             start_pos = file_content.find(method_comment)
             if start_pos != -1:
                 end_pos = start_pos + len(method_comment)
@@ -78,6 +78,8 @@ def write_code_snippet_to_file(
                 )
                 with open(file_path, "w", encoding="utf-8") as file:
                     file.write(modified_content)
+    with open(file_path, "r", encoding="utf-8") as file:
+        file_content = file.read()
         start_pos = file_content.find(original_code)
         if start_pos != -1:
             end_pos = start_pos + len(original_code)
