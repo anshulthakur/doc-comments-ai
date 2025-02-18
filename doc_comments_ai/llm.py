@@ -43,6 +43,8 @@ class LLM:
                 model=f"azure/{azure_deployment}",
             )
         elif ollama is not None:
+            if ollama[1].startswith('llama'):
+                max_tokens = 32768 #These are trained over a larger context
             self.llm = Ollama(
                 base_url=ollama[0],
                 model=ollama[1],
@@ -54,7 +56,7 @@ class LLM:
                 temperature=0.8, max_tokens=max_tokens, model=model.value
             )
         self.template = (
-            "Act as a {language} language expert. "
+            "Act as a software documentation expert in {language} language."
             "Add a detailed doc comment to the following {language} method:\n{code}\n"
             "The doc comment should describe what the method does. "
             "{comment_instructions} "
@@ -66,7 +68,7 @@ class LLM:
                 "language",
                 "code",
                 "comment_instructions",
-                "Haskell_missing_signature",
+                "haskell_missing_signature",
             ],
         )
         self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
@@ -78,12 +80,12 @@ class LLM:
         if inline:
             comment_instructions = (
                 "Add inline comments to the method body where it makes sense."
-                "Return the complete method implementation with the doc comment as a markdown code block. "
+                "Return the complete method implementation with the doc comment as a single markdown code block. "
                 "IMPORTANT: Ensure that absolutely no part of the original function is omitted or modified in your response. Every line, including imports, comments, and variable bindings, should be retained in the output. This is crucial to satisfy my use case."
             )
         elif comment_with_source_code:
             comment_instructions = (
-                "Return the complete method implementation with the doc comment as a single markdown code block. "
+                "Return the complete method implementation with the doc comment as a single markdown code block."
                 "If a docstring already exists in the code, please reuse its content as much as possible and revise the docstring to reflect any detail that is missing in the existing docstring. "
             )
             if docstring and len(docstring.strip())>0:
@@ -92,10 +94,11 @@ class LLM:
             
             comment_instructions += (
                 "IMPORTANT: Ensure that absolutely no part of the original function's implementation is omitted or modified in your response. Every line, including imports, comments, and variable bindings, should be retained in the output. This is crucial to satisfy my use case. "
-                "The docstring may, however, be revised. ")
+                "The docstring may, however, be revised. "
+                "IMPORTANT: It is vital that everything is wrapped inside a single markdown code block only.")
         else:
             comment_instructions = (
-                "Return the doc comment as a markdown block. "
+                "Return the doc comment as a single markdown block. "
                 "If the doc comment consists of more than one sentence then please follow multi-line comments."
                 f"IMPORTANT: Please avoid writing any code in the markdown block. Ensure that the markdown block contains only doc comments and enclose them appropriately using the correct comment delimiters for the {language} language."
                 """

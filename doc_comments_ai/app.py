@@ -144,7 +144,7 @@ def run():
 
         tokens = utils.count_tokens(method_comment+method_source_code) if method_comment is not None else utils.count_tokens(method_source_code)
         total_original_tokens += tokens
-        if tokens > 2048 and not (args.gpt4 or args.gpt3_5_16k):
+        if tokens > 2048 and not (args.gpt4 or args.gpt3_5_16k or args.ollama_model):
             print(
                 f"❌ Method {method_name} has too many tokens. "
                 f"Consider using {utils.get_bold_text('--gpt4')} "
