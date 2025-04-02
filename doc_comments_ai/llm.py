@@ -4,10 +4,11 @@ import sys
 from enum import Enum
 
 import inquirer
-from langchain.chains import LLMChain
-from langchain.chat_models import ChatLiteLLM
-from langchain.llms import LlamaCpp, Ollama
-from langchain.prompts import PromptTemplate
+from langchain_community.chat_models import ChatLiteLLM
+from langchain_community.llms import LlamaCpp
+
+from langchain_ollama import OllamaLLM
+from langchain_core.prompts import ChatPromptTemplate
 
 from doc_comments_ai import utils
 
@@ -45,7 +46,7 @@ class LLM:
         elif ollama is not None:
             if ollama[1].startswith('llama'):
                 max_tokens = 32768 #These are trained over a larger context
-            self.llm = Ollama(
+            self.llm = OllamaLLM(
                 base_url=ollama[0],
                 model=ollama[1],
                 temperature=0.8,
@@ -55,23 +56,27 @@ class LLM:
             self.llm = ChatLiteLLM(
                 temperature=0.8, max_tokens=max_tokens, model=model.value
             )
-        self.template = (
-            "Act as a software documentation expert in {language} language."
-            "Add a detailed doc comment to the following {language} method:\n{code}\n"
-            "The doc comment should describe what the method does. "
-            "{comment_instructions} "
-            "Don't include any explanations {haskell_missing_signature}in your response."
+
+        self.template = ChatPromptTemplate.from_messages(
+            [("system", "Act as a software documentation expert in {language} language. "
+                        "Add detailed doc comments to the provided method without changing any code "
+                        "The doc comments should describe what the method does. "
+                        "{comment_instructions} "
+                        "Don't include any explanations {haskell_missing_signature}in your response."), 
+             ("user", "{code}")
+            ]
         )
-        self.prompt = PromptTemplate(
-            template=self.template,
-            input_variables=[
-                "language",
-                "code",
-                "comment_instructions",
-                "haskell_missing_signature",
-            ],
-        )
-        self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
+
+        # self.prompt = ChatPromptTemplate(
+        #     template=self.template,
+        #     input_variables=[
+        #         "language",
+        #         "code",
+        #         "comment_instructions",
+        #         "haskell_missing_signature",
+        #     ],
+        # )
+        # self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
 
     def generate_doc_comment(self, language, code, inline=False, comment_with_source_code=False, docstring=''):
         """
@@ -85,7 +90,7 @@ class LLM:
             )
         elif comment_with_source_code:
             comment_instructions = (
-                "Return the complete method implementation with the doc comment as a single markdown code block."
+                "Return the complete method implementation with the doc comment as a single markdown code block. "
                 "If a docstring already exists in the code, please reuse its content as much as possible and revise the docstring to reflect any detail that is missing in the existing docstring. "
             )
             if docstring and len(docstring.strip())>0:
@@ -125,7 +130,11 @@ class LLM:
         }
 
         #print(input)
-        documented_code = self.chain.run(input)
+        #documented_code = self.chain.run(input)
+        prompt = self.template.invoke(input)
+        #print(prompt)
+        documented_code = self.llm.invoke(prompt)
+        #print(documented_code)
         return documented_code
 
     def install_llama_cpp(self):
