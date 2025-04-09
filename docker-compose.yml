@@ -1,0 +1,12 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    restart: always
+    container_name: documate
+    command: python3 main.py
+    volumes:
+      - ./doc_comments_ai:/app
+    # env_file:
+    #   - .env  # Reference the .env file
